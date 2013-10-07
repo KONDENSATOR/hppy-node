@@ -1,0 +1,22 @@
+{
+  "name": "hppy",
+  "version": "0.0.1",
+  "description": "Do away with repetitive code",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "macro"
+  ],
+  "author": "Fredrik Andersson",
+  "license": "BSD-2-Clause",
+  "dependencies" : {
+    "esprima" : "*",
+    "escodegen" : "*",
+    "astral" : "*",
+    "astral-pass" : "*",
+    "underscore" : "*",
+    "coffee-script" : "*"
+  }
+}
