@@ -13,8 +13,8 @@ myfunc 'testfile', (err, data) ->
     if _.contains err.id, 'myfunc'
       console.log "Error in myfunc"
 
-      if _.contains err.id, 'readfile'
-        console.log "Could not read file"
+    if _.contains err.id, 'readfile'
+      console.log "Could not read file"
 
     else
       console.log "No handler defined for error id #{err.id}"
