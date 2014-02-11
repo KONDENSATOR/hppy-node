@@ -118,9 +118,17 @@ returnPass.when(
     callee:
       type: "Identifier"
       name: "ret"
+).when(
+  type: "ReturnStatement"
+  argument:
+    type: "CallExpression"
+    callee:
+      type: "Identifier"
+      name: "err"
 ).do (chunk, info) ->
+  if chunk.argument.callee.name == "ret"
+    chunk.argument.arguments.unshift(nullArgument)
   chunk.argument.callee.name = "fncallback"
-  chunk.argument.arguments.unshift nullArgument
 
 astral.register asyncFunctionPass
 astral.register callbackPass
