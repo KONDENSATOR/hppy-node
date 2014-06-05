@@ -1,7 +1,7 @@
-esprima = require 'esprima'
-escodegen = require 'escodegen'
-_ = require 'underscore'
-astral = require('astral')()
+esprima    = require 'esprima'
+escodegen  = require 'escodegen'
+_          = require 'underscore'
+astral     = require('astral')()
 astralPass = require('astral-pass')
 
 _.mixin clear: (obj) ->
