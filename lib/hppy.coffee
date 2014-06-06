@@ -1,8 +1,7 @@
 esprima    = require 'esprima'
 escodegen  = require 'escodegen'
 _          = require 'underscore'
-astral     = require('astral')()
-astralPass = require('astral-pass')
+util       = require 'util'
 
 _.mixin clear: (obj) ->
   keys = _.keys obj
@@ -12,130 +11,84 @@ _.mixin replace: (current, other) ->
   _.clear current
   _.extend current, other
 
-_.mixin putt: (tree) ->
-  console.log(JSON.stringify(tree, null, 2))
+_.mixin inspect: (tree) ->
+  console.log(util.inspect(tree, {colors:true, depth:null}))
+  tree
 
-codeIfErr = (decorations) ->
-  type: "IfStatement"
-  test:
-    type: "LogicalExpression"
-    operator: "&&"
-    left:
-      type: "BinaryExpression"
-      operator: "!=="
-      left:
-        type: "UnaryExpression"
-        operator: "typeof"
-        argument:
-          type: "Identifier"
-          name: "err"
-        prefix: true
-      right:
-        type: "Literal"
-        value: "undefined"
-    right:
-      type: "BinaryExpression"
-      operator: "!=="
-      left:
-        type: "Identifier"
-        name: "err"
-      right:
-        type: "Literal"
-        value: null
-  consequent:
-    type: "BlockStatement"
-    body: [
-        type: "ReturnStatement"
-        argument:
-          type: "CallExpression"
-          callee:
-            type: "Identifier"
-            name: "fncallback"
-          arguments: [
-            type: "ObjectExpression"
-            properties: [
-                type: "Property"
-                key:
-                  type: "Identifier"
-                  name: "id"
-                value:
-                  type: "ArrayExpression"
-                  elements: decorations
-                kind: "init"
-              ,
-                type: "Property"
-                key:
-                  type: "Identifier"
-                  name: "err"
-                value:
-                  type: "Identifier"
-                  name: "err"
-                kind: "init"
-            ]
-          ]
-    ]
-  alternate: null
+traverse = (ast, fn) ->
+  if ast.type == 'Program'
+    ast.body = _(ast.body).map((child) ->
+      traverse(child, fn))
 
-nullArgument =
-  type: 'Literal'
-  value: null
+  else if ast.type == 'MemberExpression'
+  else if ast.type == 'Literal'
+  else if ast.type == 'Identifier'
+  else if ast.type == 'VariableDeclaration'
 
-asyncFunctionPass = astralPass()
-asyncFunctionPass.name = "asyncFunctionPass"
-callbackPass = astralPass()
-callbackPass.name = "callbackPass"
-returnPass = astralPass()
-returnPass.name = "returnPass"
+  else if ast.type == 'ExpressionStatement'
+    ast.expression = traverse(ast.expression, fn)
 
-asyncFunctionPass.when(
-  type: "AssignmentExpression"
-  operator: "="
-  left:
-    type: "Identifier"
-    name: "a"
-  right:
-    type: "FunctionExpression"
-).do (chunk, info) ->
-  chunk.right.params.push {type:"Identifier", name:"fncallback"}
-  chunk
+  else if ast.type == 'AssignmentExpression'
+    ast.right = traverse(ast.right, fn)
 
-callbackPass.when(
-  type : "CallExpression"
-  callee :
-    type : "Identifier"
-    name : "cont"
-).do (chunk, info) ->
-  fun    = chunk.arguments.pop()
-  fun.params.unshift {type:"Identifier",name:"err"}
-  fun.body.body.unshift codeIfErr(chunk.arguments)
+  else if ast.type == 'FunctionExpression'
+    ast.body = traverse(ast.body, fn)
 
-  _.replace chunk, fun
+  else if ast.type == 'BlockStatement'
+    ast.body = _(ast.body).map((child) ->
+      traverse(child, fn))
 
-returnPass.when(
-  type: "ReturnStatement"
-  argument:
-    type: "CallExpression"
-    callee:
-      type: "Identifier"
-      name: "ret"
-).when(
-  type: "ReturnStatement"
-  argument:
-    type: "CallExpression"
-    callee:
-      type: "Identifier"
-      name: "err"
-).do (chunk, info) ->
-  if chunk.argument.callee.name == "ret"
-    chunk.argument.arguments.unshift(nullArgument)
-  chunk.argument.callee.name = "fncallback"
+  else if ast.type == 'CallExpression'
+    ast.arguments = _(ast.arguments).map((child) ->
+      traverse(child, fn))
 
-astral.register asyncFunctionPass
-astral.register callbackPass
-astral.register returnPass
+  else if ast.type == 'ReturnStatement'
+    ast.argument = traverse(ast.argument, fn)
 
-module.exports = (fn) ->
+  else if ast.type == 'IfStatement'
+    ast.test = traverse(ast.test, fn)
+    ast.consequent = traverse(ast.consequent, fn)
+    if ast.alternate?
+      ast.alternate = traverse(ast.alternate, fn)
+
+  else if ast.type == 'BinaryExpression'
+    ast.left = traverse(ast.left, fn)
+    ast.right = traverse(ast.right, fn)
+
+  fn(ast)
+
+_.mixin traverse: traverse
+
+macros = {}
+
+define = (defines) ->
+  macros = _(macros).extend(defines)
+
+inspect = (fn) ->
   code = "a=#{fn.toString()}"
-  tree = esprima.parse(code)
-  tree = astral.run(tree)
-  escodegen.generate tree
+  _(esprima.parse(code)).inspect()
+
+evaluate = (fn) ->
+  code = "a=#{fn.toString()}"
+  ast = _(esprima.parse(code)).traverse((node) ->
+    if _(node.type).isEqual('CallExpression') and
+       _(macros).has(node.callee.name)
+      macros[node.callee.name](node)
+    else
+      node)
+  ast.body = _(ast.body[0].expression.right.body.body).map((node) ->
+    if node.type == "ReturnStatement"
+      type: "ExpressionStatement"
+      expression: node.argument
+    else
+      node
+  )
+  #_(ast).inspect()
+  code = escodegen.generate(ast)
+  console.log code
+  code
+
+evaluate.define = define
+evaluate.inspect = inspect
+
+module.exports = evaluate

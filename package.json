@@ -14,9 +14,6 @@
   "dependencies" : {
     "esprima" : "*",
     "escodegen" : "*",
-    "astral" : "*",
-    "astral-pass" : "*",
-    "underscore" : "*",
-    "coffee-script" : "*"
+    "underscore" : "*"
   }
 }
