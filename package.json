@@ -3,17 +3,24 @@
   "version": "0.0.1",
   "description": "Do away with repetitive code",
   "main": "index.js",
+  "dependencies": {
+    "underscore": "~1.6.0"
+  },
+  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KONDENSATOR/hppy.git"
+  },
   "keywords": [
-    "macro"
+    "macro", "macros", "ast"
   ],
-  "author": "Fredrik Andersson",
-  "license": "BSD-2-Clause",
-  "dependencies" : {
-    "esprima" : "*",
-    "escodegen" : "*",
-    "underscore" : "*"
-  }
+  "author": "Fredrik Andersson / Kondensator",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/KONDENSATOR/hppy/issues"
+  },
+  "homepage": "https://github.com/KONDENSATOR/hppy"
 }

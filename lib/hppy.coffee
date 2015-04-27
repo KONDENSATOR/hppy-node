@@ -70,12 +70,14 @@ inspect = (fn) ->
 
 evaluate = (fn) ->
   code = "a=#{fn.toString()}"
+  # Parse the input to ast
   ast = _(esprima.parse(code)).traverse((node) ->
     if _(node.type).isEqual('CallExpression') and
        _(macros).has(node.callee.name)
       macros[node.callee.name](node)
     else
       node)
+  # Remove wrapper function
   ast.body = _(ast.body[0].expression.right.body.body).map((node) ->
     if node.type == "ReturnStatement"
       type: "ExpressionStatement"
@@ -83,10 +85,7 @@ evaluate = (fn) ->
     else
       node
   )
-  #_(ast).inspect()
-  code = escodegen.generate(ast)
-  console.log code
-  code
+  escodegen.generate(ast)
 
 evaluate.define = define
 evaluate.inspect = inspect

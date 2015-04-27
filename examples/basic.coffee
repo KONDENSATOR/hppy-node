@@ -73,41 +73,17 @@ hppy.define(
     console.log("ERR")
     _(ast).inspect())
 
-console.log "================ TEMPLATE  =============="
-hppy.inspect(() ->
-  myfunc = (fileName, cb) ->
-    fs.readFile(fileName, 'utf8', (err, data) ->
-      if err?
-        cb(err)
-      else
-        cb(null, data)))
-
-console.log "================ PRODUCT  =============="
-
 eval(hppy(() ->
   myfunc = cps((fileName) ->
-    fs.readFile(fileName, 'utf8', cont('myfunc', 'readfile', (data) ->
+    fs.readFile(fileName, 'utf8', cont((data) ->
       if data.length == 0
         err("File empty!")
       else
         ret(data))))
 
-  add = () -> 1 + 1
-
-  add()
-
   myfunc('testfile', (err, data) ->
     if err?
-
-      # Error management for GUI users
-      if _.contains err.id, 'myfunc'
-        console.log "Error in myfunc"
-
-      if _.contains err.id, 'readfile'
-        console.log "Could not read file"
-
-      else
-        console.log "No handler defined for error id #{err.id}"
+      console.log "No handler defined for error id #{err.id}"
 
       # Log output for system administrators
       console.error err
